@@ -161,7 +161,7 @@
     justDrew: null, // 'world' | 'twist': flip that card in on the next render
     justAdded: null, // id of the idea that just landed on the pile
     lastRemoved: null, // { idea, index } so a removal can be undone
-    twistChooserOpen: false,
+    compassOpen: false, // the pinned creature reminder, expanded
     restOpen: false, // "The rest of your pile" on the try screen
   };
 
@@ -488,7 +488,7 @@
       ${title('Where is this headed?')}
       ${field({ id: 'f-obvious', path: 'obvious', rows: 5, placeholder: 'I see…',
         label: `Your ${areaWord()}, five years from now, if nothing changes. Write the obvious version.` })}
-      ${field({ id: 'f-boring', path: 'boring', rows: 3, label: '…but it feels boring because' })}`;
+      ${field({ id: 'f-boring', path: 'boring', rows: 3, label: 'What still feels pretty tame about this is…' })}`;
   }
 
   // A few examples, picked at random once per page load (placeholder until the curated set exists).
@@ -540,24 +540,6 @@
     </li>`;
   }
 
-  function twistChooser() {
-    const grid = cards.twists.map((t) => {
-      const on = state.table.twistIds.includes(t.id);
-      return `<li><button type="button" class="card-btn${on ? ' is-selected' : ''}" data-action="toggle-twist" data-id="${esc(t.id)}" data-key="twist-${esc(t.id)}" aria-pressed="${on}">
-        ${card('twist', t)}
-        ${on ? '<span class="badge">On the table</span>' : ''}
-      </button></li>`;
-    }).join('');
-    return `<details class="disclosure" data-chooser${ui.twistChooserOpen ? ' open' : ''}>
-      <summary>Choose a twist yourself</summary>
-      <div class="disclosure__body">
-        <p class="hint">Pick one, or two at most. Tap again to take it off the table.</p>
-        <ul class="card-grid card-grid--twists">${grid}</ul>
-        <p class="hint" role="status" data-status="twist"></p>
-      </div>
-    </details>`;
-  }
-
   function screenPlay() {
     const c = creature();
     const w = worldOf(state.table);
@@ -602,7 +584,6 @@
             ${w.source ? `<p><a href="${esc(w.source)}" target="_blank" rel="noopener noreferrer">Read more on ${esc(hostname(w.source))}<span class="visually-hidden"> (opens in a new tab)</span></a></p>` : ''}
           </div>
         </details>` : ''}
-        ${twistChooser()}
       </section>
 
       <section class="catch" aria-label="Add an idea">
@@ -650,10 +631,10 @@
   }
 
   function screenTry() {
-    const tiles = pickExamples('ways', cards.ways, 4).map((w, i) => `
-      <li class="way-tile way-tile--${i + 1}">
-        <span class="way-tile__name">${esc(dropStop(w.name))}</span>
-        <span class="way-tile__text">${esc(w.text)}</span>
+    const slips = pickExamples('ways', cards.ways, 4).map((w) => `
+      <li class="rule-slip rule-slip--way">
+        <span class="rule-slip__name">${esc(dropStop(w.name))}</span>
+        <span class="rule-slip__text">${esc(w.text)}</span>
       </li>`).join('');
     const picked = pickedIdeas();
     const forThisOne = nick() ? `My ${nick()} move for this one is…` : 'My move for this one is…';
@@ -670,7 +651,7 @@
       ${pilePicker()}
       <div class="examples">
         <p class="eyebrow">A few ways in. Steal one, or invent your own.</p>
-        <ul class="way-tiles">${tiles}</ul>
+        <ul class="rule-slips">${slips}</ul>
       </div>
       ${moves}
       ${copyButton('move')}`;
@@ -683,7 +664,7 @@
     if (area()) sections.push({ title: 'Part of life', items: [{ text: area().name }] });
     const tame = [];
     if (state.obvious.trim()) tame.push({ label: 'Where it’s headed', text: state.obvious.trim() });
-    if (state.boring.trim()) tame.push({ label: '…but it feels boring because', text: state.boring.trim() });
+    if (state.boring.trim()) tame.push({ label: 'What still feels pretty tame about it', text: state.boring.trim() });
     if (state.rule.trim()) tame.push({ label: 'The rule keeping it tame', text: state.rule.trim() });
     if (tame.length) sections.push({ title: 'The tame version', items: tame });
     if (c) {
@@ -793,14 +774,15 @@
 
     const screen = SCREENS[state.screen];
     app.innerHTML = `
-      <header class="topbar">
-        ${['welcome', 'notes'].includes(state.screen) ? '' : '<p class="wordmark">Feral Futures</p>'}
+      ${state.screen === 'welcome' ? '' : `<header class="topbar">
+        ${state.screen === 'notes' ? '' : '<p class="wordmark">Feral Futures</p>'}
         ${progress(screen.part)}
-      </header>
+      </header>`}
+      ${compass()}
       ${storageOk ? '' : '<p class="warning" role="alert">Your browser isn’t letting this page save. Your answers will be lost if you refresh, so keep this tab open.</p>'}
       <main id="main" class="screen screen--${state.screen}">${screen.render()}</main>
-      ${footer()}
-      ${actionBar(state.screen)}`;
+      ${actionBar(state.screen)}
+      ${footer()}`;
 
     if (navigated) {
       window.scrollTo(0, 0);
@@ -822,6 +804,25 @@
       }
     }
     ui.justAdded = null; // the "just landed" pop only plays once
+  }
+
+  // Who you are and the question you're carrying: pinned to the top once a creature is chosen,
+  // so it stays in view while people write. Tap to see the full question and their own note.
+  const COMPASS_SCREENS = ['area', 'headed', 'tame', 'play', 'try'];
+  function compass() {
+    const c = creature();
+    if (!c || !COMPASS_SCREENS.includes(state.screen)) return '';
+    const note = state.creatureNote.trim();
+    return `<details class="compass" data-compass${ui.compassOpen ? ' open' : ''}>
+      <summary class="compass__summary" data-key="compass">
+        ${c.image ? `<img class="compass__img" src="${esc(c.image)}" alt="">` : '<span class="compass__img" aria-hidden="true"></span>'}
+        <span class="compass__body">
+          <span class="compass__who">You're the ${esc(c.nickname)}</span>
+          <span class="compass__q">${esc(c.question)}</span>
+        </span>
+      </summary>
+      ${note ? `<p class="compass__note"><span class="compass__label">What I'm channelling</span>${esc(note)}</p>` : ''}
+    </details>`;
   }
 
   function footer() {
@@ -952,17 +953,6 @@
     'draw-world': drawWorld,
     'draw-twist': drawTwist,
 
-    'toggle-twist': (el) => {
-      const ids = state.table.twistIds;
-      const id = el.dataset.id;
-      if (ids.includes(id)) ids.splice(ids.indexOf(id), 1);
-      else if (ids.length >= 2) {
-        setStatus('twist', 'Two is the limit. Tap one of yours to take it off first.');
-        return;
-      } else ids.push(id);
-      saveState();
-      render();
-    },
 
     'add-idea': addIdea,
     'star-idea': (el) => {
@@ -1097,10 +1087,10 @@
     }
   });
 
-  // Remember whether the twist chooser is open, so re-renders don't snap it shut.
+  // Remember whether "the rest of your pile" is open, so re-renders don't snap it shut.
   app.addEventListener('toggle', (event) => {
-    if (event.target.matches?.('[data-chooser]')) ui.twistChooserOpen = event.target.open;
     if (event.target.matches?.('[data-rest]')) ui.restOpen = event.target.open;
+    if (event.target.matches?.('[data-compass]')) ui.compassOpen = event.target.open;
   }, true);
 
   window.addEventListener('hashchange', onHashChange);

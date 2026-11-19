@@ -75,6 +75,8 @@ To add web fonts: add the `@font-face` rules (or a font `<link>` in `index.html`
 
 Part 2 is a play table, not a step-by-step flow: creature, world and twist sit side by side, can be redrawn or swapped any time, and every idea goes on a pile tagged with the cards that were in play. The prompt above the idea box is built from the cards on the table (`cardPrompt` in `app.js`). People star the ones that spark something.
 
+Once someone has picked a creature, a small reminder pinned to the top of the screen (`compass` in `app.js`) shows who they are and their creature's question, from "Pick a part of life" through "Try one small thing". Tapping it shows the full question and what they wrote about what they're channelling.
+
 In part 3 they pick the idea or two they want to take with them from the pile, and write a small move for each. The field notes keep the whole pile plus those takeaways.
 
 ## Links

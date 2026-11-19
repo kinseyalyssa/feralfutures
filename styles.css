@@ -270,7 +270,7 @@ button { font: inherit; color: inherit; }
 .actionbar .btn--primary { flex: 0 1 auto; }
 
 .sitefoot {
-  padding: 0 var(--gutter) var(--space-4);
+  padding: var(--space-4) var(--gutter) var(--space-5);
   text-align: center;
 }
 .reset-confirm {
@@ -575,27 +575,67 @@ button.flip:hover .flip__inner { transform: translateY(-3px) rotate(-1deg); }
 .rule-slip:nth-child(3n + 2) { rotate: 0.9deg; margin-left: var(--space-4); }
 .rule-slip:nth-child(3n + 3) { rotate: -0.4deg; }
 
-/* Example ways in: a little mosaic of tiles */
-.way-tiles {
+/* Ways in: same paper slips, with a name and a line of explanation */
+.rule-slip--way { display: grid; gap: var(--space-1); }
+.rule-slip__text {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+/* Pinned reminder: your creature and its question */
+.compass {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  margin: 0 var(--gutter);
+  background: var(--color-surface);
+  border: 1.5px solid var(--deck-creature);
+  border-radius: var(--radius-ui);
+  box-shadow: 0 4px 10px -6px rgb(28 26 23 / 0.35);
+}
+.compass__summary {
+  list-style: none;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 2.6rem 1fr;
   gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
 }
-.way-tile {
+.compass__summary::-webkit-details-marker { display: none; }
+.compass__img {
+  width: 2.6rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--deck-creature);
+}
+.compass__body { display: grid; gap: 1px; min-width: 0; }
+.compass__who {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--deck-creature);
+  font-size: var(--text-sm);
+}
+.compass__q {
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.compass[open] .compass__q { display: block; }
+.compass__note {
   display: grid;
-  align-content: start;
-  gap: var(--space-2);
-  padding: var(--space-4);
-  border-radius: var(--radius-card);
-  color: var(--deck-ink);
-  min-height: 9rem;
+  gap: 2px;
+  padding: 0 var(--space-3) var(--space-3) calc(2.6rem + var(--space-3) * 2);
+  font-size: var(--text-sm);
 }
-.way-tile--1 { background: var(--color-accent); }
-.way-tile--2 { background: var(--deck-creature); }
-.way-tile--3 { background: var(--deck-twist); }
-.way-tile--4 { background: var(--deck-world); }
-.way-tile__name { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; line-height: 1.15; }
-.way-tile__text { font-size: var(--text-sm); line-height: 1.4; }
+.compass__label { font-size: 0.75rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.08em; }
 
 /* =========================================================================
    FIELDS
@@ -884,7 +924,7 @@ dl.sofar { margin: 0; padding: 0; border: 0; background: none; gap: var(--space-
   }
   body { background: #fff; color: #000; font-size: 11pt; }
   .app { max-width: none; min-height: 0; display: block; }
-  .topbar, .actionbar, .sitefoot, .skip-link, .warning,
+  .topbar, .compass, .actionbar, .sitefoot, .skip-link, .warning,
   .notes-actions, button, .copy-status, .manual-copy { display: none !important; }
   .screen { padding: 0; gap: 14pt; }
   .wordmark { color: #000; }
@@ -901,3 +941,6 @@ dl.sofar { margin: 0; padding: 0; border: 0; background: none; gap: var(--space-
   a { color: #000; }
   .whats-next a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 9pt; }
 }
+
+/* Keep focused fields clear of the pinned creature reminder */
+html:has(.compass) { scroll-padding-top: 6rem; }
